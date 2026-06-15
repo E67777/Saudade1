@@ -307,10 +307,14 @@ st.markdown(f"""
             font-style: normal;
     }}      
     /* 全局奶油背景色 */
-    .stApp {{
+    .stApp {
         background-color: #faf6f0 !important;
         color: #3a3028 !important;
+    }
+    [data-testid="stMain"], [data-testid="stMainContainer"], .main {{
+        background-color: #faf6f0 !important;
     }}
+
 
     /* 应用自定义字体 */
     .saudade-title, 
