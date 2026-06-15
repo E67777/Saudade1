@@ -20,6 +20,7 @@ import requests
 import smtplib
 import datetime
 import hashlib
+import re
 from email.mime.text import MIMEText
 from email.header import Header
 
@@ -991,7 +992,12 @@ elif st.session_state.page == "comfort_page":
         if p.get("type") == "celebrity":
             animal_prompt = f"明星「{name}」在粉丝圈子里的‘动物塑’（如猫、狗、兔、狐狸、熊等）是什么？请只返回该动物的一个汉字（例如：猫），不要任何标点符号或多余解释。"
             try:
-                pet_type = call_smart_ai_api("你是一个动物塑专家，只回答一个字。", [{"role": "user", "content": animal_prompt}], scenario="extract_persona").strip()
+                pet_type = call_smart_ai_api(
+                    system_prompt="你是一个追星术语动物塑专家，只回答最精简的动物名词，不准带有任何废话。", 
+                    messages_list=[{"role": "user", "content": animal_prompt}], 
+                    scenario="extract_persona"
+                ).strip()
+                pet_type = re.sub(r'<[^>]+>', '', pet_type).strip()
             except:
                 pet_type = "猫"
         else:
