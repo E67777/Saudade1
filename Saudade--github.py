@@ -18,6 +18,8 @@ import sys
 import base64
 import requests
 import smtplib
+import datatime
+import hashlib
 from email.mime.text import MIMEText
 from email.header import Header
 
@@ -63,6 +65,71 @@ def send_dual_channels_notification(text_content):
 
 # 整个脚本最顶部执行一次页面配置
 st.set_page_config(page_title="Saudade", page_icon="🥰", layout="centered", initial_sidebar_state="expanded")
+
+@st.cache_resource
+def get_global_tracker():
+    return {"code_usage": {}}
+
+if "authenticated" not in st.session_state:
+    st.session_state.authenticated = False
+if "is_admin" not in st.session_state:
+    st.session_state.is_admin = False  
+
+today_date = datetime.date.today()
+today_str = today_date.strftime("%Y%m%d")
+
+SECRET_SALT = st.secrets.get("SERVER_CHAN_SENDKEY", "SaudadeFallbackSalt")
+raw_salt_string = f"{today_str}_{SECRET_SALT}"
+
+today_code = hashlib.sha256(raw_salt_string.encode()).hexdigest()[:6].upper()
+
+tracker = get_global_tracker()
+if today_code not in tracker["code_usage"]:
+    tracker["code_usage"][today_code] = 0
+
+# 7 天免密
+if "auth_time" in st.query_params:
+    try:
+        saved_date_str = st.query_params["auth_time"]
+        saved_date = datetime.datetime.strptime(saved_date_str, "%Y%m%d").date()
+        if 0 <= (today_date - saved_date).days <= 7:
+            st.session_state.authenticated = True
+    except:
+        pass
+
+# 拦截未验证用户
+if not st.session_state.authenticated:
+    st.title("✨ Saudade 时空通道")
+    st.markdown("---")
+    
+    current_used = tracker["code_usage"][today_code]
+    if current_used >= 30:
+        st.error("⚠️ 抱歉，今日时空通道的新增激活名额已达上限（30/30次），请明天再来吧~")
+        st.stop()
+        
+    st.info(f"📊 今日通道剩余新增名额：`{30 - current_used}` / 30 次（已解锁的用户不受影响）")
+    visitor_password = st.text_input("🔑 请输入今天的访问暗号（6位随机码）：", type="password")
+    
+    if st.button("确认开启", use_container_width=True):
+        if visitor_password.strip().upper() == today_code:
+            tracker["code_usage"][today_code] += 1
+            st.session_state.authenticated = True
+            st.query_params["auth_time"] = today_str
+            st.success("暗号正确！已为您开启 7 天免密通行证 ✨")
+            st.rerun()
+            
+        elif visitor_password == "6799":
+            st.session_state.authenticated = True
+            st.session_state.is_admin = True  
+            st.rerun()
+        else:
+            st.error("❌ 暗号错误或已过期！密码每天随机生成，请向创作者获取。")
+            
+    st.stop()  
+
+if st.session_state.get("is_admin", False):
+    st.warning(f"👑 亲爱的创作者，今日系统随机生成的访客暗号为：【 {today_code} 】（你可以直接复制此代码发给朋友，过凌晨后自动作废刷新）")
+# —— 拦截锁结束 ——
 
 def get_font_base64(font_path):
     if os.path.exists(font_path):
