@@ -307,10 +307,11 @@ st.markdown(f"""
             font-style: normal;
     }}      
     /* 全局奶油背景色 */
-    .stApp {
+    .stApp {{
         background-color: #faf6f0 !important;
         color: #3a3028 !important;
     }
+    /* 🛠️ 新增：强行把手机端的主体内容容器也染成一样的复古色，不留白 */
     [data-testid="stMain"], [data-testid="stMainContainer"], .main {{
         background-color: #faf6f0 !important;
     }}
