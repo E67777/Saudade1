@@ -922,70 +922,56 @@ elif st.session_state.page == "comfort_page":
      # 阶段二：小动物互动
     elif st.session_state.comfort_step == "pet":
         if p.get("type") == "celebrity":
-            animal_prompt = f"明星「{name}」在粉丝圈子里的‘动物塑’（比如猫、修勾、小兔子、小狐狸、小熊等）是什么？请只返回这个动物的名字，不要带任何标点或多余解释。"
+            animal_prompt = f"明星「{name}」在粉丝圈子里的‘动物塑’（如猫、狗、兔、狐狸、熊等）是什么？请只返回该动物的一个汉字（例如：猫），不要任何标点符号或多余解释。"
             try:
-                pet_type = call_smart_ai_api(
-                    system_prompt="你是一个追星术语和动物塑专家，只需要回答最精简的动物名词，不准带有任何废话。",
-                    messages_list=[{"role": "user", "content": animal_prompt}],
-                    scenario="pet_inference"
-                ).strip()
-            except Exception as pet_err:
-                pet_type = "粘人的热心小狗"
+                pet_type = call_smart_ai_api("你是一个动物塑专家，只回答一个字。", [{"role": "user", "content": animal_prompt}], scenario="extract_persona").strip()
+            except:
+                pet_type = "猫"
         else:
-            # 自定义角色根据人设关键词模糊推断
-            pet_type = "软萌的小狐狸" if "幽默" in p.get("personality", "") else "粘人的热心小狗"
+            pet_type = "狐" if "幽默" in p.get("personality", "") else "狗"
 
-        st.markdown(f'<div class="saudade-title">🐾 {name} 变成的 {pet_type}</div>', unsafe_allow_html=True)
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-# 互动状态展示框
         PET_ANIMATION_MAP = {
-            "猫": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Cat%20Face.png",
-            "狗": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Dog%20Face.png",
-            "犬": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Dog%20Face.png",
-            "兔": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Rabbit%20Face.png",
-            "狐": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Fox.png",
-            "熊": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Bear.png",
-            "猪": "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Pig%20Face.png"
+            "猫": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Cat%20Face.png",
+            "狗": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Dog%20Face.png",
+            "犬": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Dog%20Face.png",
+            "兔": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Rabbit%20Face.png",
+            "狐": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Fox.png",
+            "熊": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Bear.png"
         }
-
-        current_animation = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Animated-Fluent-Emojis/main/Emojis/Animals/Cat%20Face.png"
+    
+        EMOJI_BACKUP = {"猫": "🐱", "狗": "🐶", "犬": "🐶", "兔": "🐰", "狐": "🦊", "熊": "🐻"}
+    
+        current_animation = "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Cat%20Face.png"
+        backup_text_emoji = "🐱"
+    
         for key, url in PET_ANIMATION_MAP.items():
-            if key in pet_type:
+             if key in pet_type:
                 current_animation = url
+                backup_text_emoji = EMOJI_BACKUP.get(key, "🐱")
                 break
 
+        st.markdown(f'<div class="saudade-title">🐾 {name} 变成的小动物</div>', unsafe_allow_html=True)
         st.markdown(f"""
         <div style="background-color: #2b221a; padding: 2em; border-radius: 15px; border: 1px solid #c9a96e; text-align: center;">
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px;">
-                < img src="{current_animation}" width="130" style="image-rendering: -webkit-optimize-contrast;"/>
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px; min-height: 130px;">
+                <!-- 用 alt 属性塞入大表情。图片加载失败时，会自动展现超好看的巨型文本表情 -->
+                < img src="{current_animation}" alt="{backup_text_emoji}" width="130" style="font-size: 5em; color: #b89355; display: block;"/>
             </div>
-            <p style="font-size: 1.2em; color: #c9a96e; font-weight: bold; margin-top: 0.5em;">一只代表 Ta 的 [{pet_type}] 正陪在你的身边</p >
+            <p style="font-size: 1.2em; color: #c9a96e; font-weight: bold;">一只代表 Ta 的 [{pet_type}] 正陪在你的身边</p >
             <p style="font-size: 1.1em; color: #9e8c7a; font-style: italic;">当前状态：{st.session_state.pet_action}</p >
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("<br>", unsafe_allow_html=True)
-        
-        # 互动按钮
+    
         b1, b2, b3 = st.columns(3)
         with b1:
-            if st.button(f"伸出手指摸摸头", use_container_width=True):
-                st.session_state.pet_action = f"轻轻蹭了蹭你的手掌，发出舒服的呼噜声，歪着头看着你。 ( ˊ 🚀 ˋ )"
-                st.rerun()
+            if st.button("伸出手指摸摸头", use_container_width=True): st.session_state.pet_action = "轻轻蹭了蹭你的手掌，发出舒服的呼噜声。"; st.rerun()
         with b2:
-            if st.button(f"喂它吃个小零食", use_container_width=True):
-                st.session_state.pet_action = f"两只前爪捧住食物嚼吧嚼吧咽了下去，开心地摇了摇尾巴，把肚皮翻过来朝向你。"
-                st.rerun()
+            if st.button("喂它吃个小零食", use_container_width=True): st.session_state.pet_action = "两只前爪捧住食物嚼吧嚼吧咽了下去，开心地摇了摇尾巴。"; st.rerun()
         with b3:
-            if st.button(f"看它在地上打滚", use_container_width=True):
-                st.session_state.pet_action = f"在柔软的地毯上吧嗒吧嗒转了个圈，然后啪叽一下倒在地上，咕噜噜地滚到了你的脚边。"
-                st.rerun()
-                
-        st.markdown("<hr style='border-color: #3a3028;'>", unsafe_allow_html=True)
+            if st.button("看它在地上打滚", use_container_width=True): st.session_state.pet_action = "在柔软的地毯上吧嗒吧嗒转了个圈，啪叽倒在地上撒娇。"; st.rerun()
+            
         if st.button("🏠 回到主页面", use_container_width=True):
-            for k, v in defaults.items():
-                st.session_state[k] = v
+            for k, v in defaults.items(): st.session_state[k] = v
             st.rerun()
 
 # ========== Secret 模式 ==========
