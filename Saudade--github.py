@@ -919,7 +919,7 @@ elif st.session_state.page == "comfort_page":
                     st.session_state[k] = v
                 st.rerun()
 
-     # 阶段二：小动物互动
+    # 阶段二：小动物互动
     elif st.session_state.comfort_step == "pet":
         if p.get("type") == "celebrity":
             animal_prompt = f"明星「{name}」在粉丝圈子里的‘动物塑’（如猫、狗、兔、狐狸、熊等）是什么？请只返回该动物的一个汉字（例如：猫），不要任何标点符号或多余解释。"
@@ -938,40 +938,46 @@ elif st.session_state.page == "comfort_page":
             "狐": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Fox.png",
             "熊": "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Bear.png"
         }
-    
-        EMOJI_BACKUP = {"猫": "🐱", "狗": "🐶", "犬": "🐶", "兔": "🐰", "狐": "🦊", "熊": "🐻"}
-    
+        
         current_animation = "https://cdn.jsdelivr.net/gh/Tarikul-Islam-Anik/Animated-Fluent-Emojis@main/Emojis/Animals/Cat%20Face.png"
-        backup_text_emoji = "🐱"
-    
         for key, url in PET_ANIMATION_MAP.items():
-             if key in pet_type:
+            if key in pet_type:
                 current_animation = url
-                backup_text_emoji = EMOJI_BACKUP.get(key, "🐱")
                 break
 
         st.markdown(f'<div class="saudade-title">🐾 {name} 变成的小动物</div>', unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style="background-color: #2b221a; padding: 2em; border-radius: 15px; border: 1px solid #c9a96e; text-align: center;">
-            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px; min-height: 130px;">
-                <!-- 用 alt 属性塞入大表情。图片加载失败时，会自动展现超好看的巨型文本表情 -->
-                < img src="{current_animation}" alt="{backup_text_emoji}" width="130" style="font-size: 5em; color: #b89355; display: block;"/>
-            </div>
-            <p style="font-size: 1.2em; color: #c9a96e; font-weight: bold;">一只代表 Ta 的 [{pet_type}] 正陪在你的身边</p >
-            <p style="font-size: 1.1em; color: #9e8c7a; font-style: italic;">当前状态：{st.session_state.pet_action}</p >
-        </div>
-        """, unsafe_allow_html=True)
-    
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        pet_card_html = f"""
+<div style="background-color: #2b221a; padding: 2em; border-radius: 15px; border: 1px solid #c9a96e; text-align: center;">
+<div style="display: flex; justify-content: center; align-items: center; margin-bottom: 15px; min-height: 130px;">
+< img src="{current_animation}" width="130" style="display: block; margin: 0 auto;"/>
+</div>
+<p style="font-size: 1.2em; color: #c9a96e; font-weight: bold; margin: 10px 0;">一只代表 Ta 的 [{pet_type}] 正陪在你的身边</p >
+<p style="font-size: 1.1em; color: #9e8c7a; font-style: italic; margin: 0;">当前状态：{st.session_state.pet_action}</p >
+</div>
+"""
+        st.markdown(pet_card_html, unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # 互动按钮
         b1, b2, b3 = st.columns(3)
         with b1:
-            if st.button("伸出手指摸摸头", use_container_width=True): st.session_state.pet_action = "轻轻蹭了蹭你的手掌，发出舒服的呼噜声。"; st.rerun()
+            if st.button("伸出手指摸摸头", use_container_width=True):
+                st.session_state.pet_action = "轻轻蹭了蹭你的手掌，发出舒服的呼噜声。"
+                st.rerun()
         with b2:
-            if st.button("喂它吃个小零食", use_container_width=True): st.session_state.pet_action = "两只前爪捧住食物嚼吧嚼吧咽了下去，开心地摇了摇尾巴。"; st.rerun()
+            if st.button("喂它吃个小零食", use_container_width=True):
+                st.session_state.pet_action = "两只前爪捧住食物嚼吧嚼吧咽了下去，开心地摇了摇尾巴。"
+                st.rerun()
         with b3:
-            if st.button("看它在地上打滚", use_container_width=True): st.session_state.pet_action = "在柔软的地毯上吧嗒吧嗒转了个圈，啪叽倒在地上撒娇。"; st.rerun()
-            
+            if st.button("看它在地上打滚", use_container_width=True):
+                st.session_state.pet_action = "在柔软的地毯上吧嗒吧嗒转了个圈，啪叽倒在地上撒娇。"
+                st.rerun()
+                
         if st.button("🏠 回到主页面", use_container_width=True):
-            for k, v in defaults.items(): st.session_state[k] = v
+            for k, v in defaults.items():
+                st.session_state[k] = v
             st.rerun()
 
 # ========== Secret 模式 ==========
