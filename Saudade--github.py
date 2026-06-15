@@ -18,7 +18,7 @@ import sys
 import base64
 import requests
 import smtplib
-import datatime
+import datetime
 import hashlib
 from email.mime.text import MIMEText
 from email.header import Header
