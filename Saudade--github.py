@@ -791,11 +791,18 @@ elif st.session_state.page == "questionnaire":
         if st.session_state.q_index <= total:
             current_q = questions[st.session_state.q_index - 1]
             st.markdown(f"### 问题 {st.session_state.q_index} / {total}\n{current_q}")
-            if st.session_state.get("q_mode") == "自动回答" and (st.session_state.q_index <= 3):
-                options = ["预测选项A", "预测选项B", "预测选项C", "预测选项D"] 
-                answer = st.radio("AI 预测关联选项:", options + ["都不是，自己填写"])
-                if answer == "都不是，自己填写":
-                    answer = st.text_input("请填写您的答案：")
+            is_auto = (st.session_state.get("q_mode") == "自动回答")
+            is_personal = (st.session_state.q_type == "personal")
+            is_target = (st.session_state.q_type == "celebrity" and st.session_state.q_index == 1) or \
+                        (is_personal and st.session_state.q_index <= 3)
+
+            if is_auto and is_target:
+                ai_options = ["选项A", "选项B", "选项C", "选项D"] 
+                choice = st.radio("AI 预测关联选项:", ai_options + ["都不是，自己填写"])
+                if choice == "都不是，自己填写":
+                    answer = st.text_input("请输入您的答案：")
+                else:
+                    answer = choice
             else:
                 answer = st.text_area("你的回答", key=f"q_{st.session_state.q_index}")
             
