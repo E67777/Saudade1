@@ -826,17 +826,18 @@ elif st.session_state.page == "questionnaire":
             is_auto = (st.session_state.get("q_mode") == "自动回答")
 
             if is_auto and (not is_first_question) and (st.session_state.q_index <= 3):
-                cache_key = f"options_{st.session_state.q_index}"
+                cache_key = f"options_for_q_{st.session_state.q_index}"
+    
                 if cache_key not in st.session_state:
-                    with st.spinner("AI 正在根据人设深度思考选项..."):
+                    with st.spinner("AI 正在深度思考回复..."):
                         past_qa_summary = "\n".join([f"{a['question']}: {a['answer']}" for a in st.session_state.q_answers])
                         p_name = st.session_state.persona.get("name", "对方")
-                        options = generate_ai_options(current_q, past_qa_summary, p_name)
-                        st.session_state[cache_key] = options
-                
+                        st.session_state[cache_key] = generate_ai_options(current_q, past_qa_summary, p_name)
+            
                 options = st.session_state[cache_key]
-                
                 choice = st.radio("AI 预测关联选项:", options + ["都不是，自己填写"])
+
+
                 
                 if choice == "都不是，自己填写":
                     answer = st.text_input("请输入您的答案：")
