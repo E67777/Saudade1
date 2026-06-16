@@ -686,6 +686,32 @@ def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", 
     return response.choices[0].message.content
 
 
+def generate_ai_options(current_question, past_qa, persona_name):
+    prompt = f"""
+    你现在正在扮演「{persona_name}」的 AI 模拟器。
+    当前问题是：{current_question}
+    用户的过往回答记录是：
+    {past_qa}
+    
+    请根据上述背景，为用户生成 4 个该角色在此时最可能说出的、具有代入感的回复选项。
+    要求：
+    1. 选项内容要符合角色的性格、口癖和说话风格。
+    2. 选项文字简洁，每条不超过 30 个字。
+    3. 只返回 4 个选项，用英文分号 ";" 分隔，不要带序号，不要带其他废话。
+    """
+    
+    try:
+        options_text = call_smart_ai_api(
+            system_prompt="你是一个人设对话选项生成器，只返回分号分隔的四个选项内容。",
+            messages_list=[{"role": "user", "content": prompt}],
+            scenario="extract_persona" # 使用 deepseek 场景，逻辑相对严谨
+        )
+        return [opt.strip() for opt in options_text.split(";") if opt.strip()]
+    except Exception as e:
+        return ["（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）"]
+
+
+
 # ========== 页面：首页 ==========
 if st.session_state.page == "home":
     st.markdown('<div class="saudade-title">SAUDADE</div>', unsafe_allow_html=True)
@@ -800,14 +826,25 @@ elif st.session_state.page == "questionnaire":
             is_auto = (st.session_state.get("q_mode") == "自动回答")
 
             if is_auto and (not is_first_question) and (st.session_state.q_index <= 3):
-                ai_options = ["选项A", "选项B", "选项C", "选项D"] 
-                choice = st.radio("AI 预测关联选项:", ai_options + ["都不是，自己填写"])
+                cache_key = f"options_{st.session_state.q_index}"
+                if cache_key not in st.session_state:
+                    with st.spinner("AI 正在根据人设深度思考选项..."):
+                        past_qa_summary = "\n".join([f"{a['question']}: {a['answer']}" for a in st.session_state.q_answers])
+                        p_name = st.session_state.persona.get("name", "对方")
+                        options = generate_ai_options(current_q, past_qa_summary, p_name)
+                        st.session_state[cache_key] = options
+                
+                options = st.session_state[cache_key]
+                
+                choice = st.radio("AI 预测关联选项:", options + ["都不是，自己填写"])
+                
                 if choice == "都不是，自己填写":
                     answer = st.text_input("请输入您的答案：")
                 else:
                     answer = choice
             else:
                 answer = st.text_area("你的回答", key=f"q_{st.session_state.q_index}")
+
             
             col1, col2 = st.columns(2)
             with col1:
