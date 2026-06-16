@@ -796,7 +796,10 @@ elif st.session_state.page == "questionnaire":
             is_target = (st.session_state.q_type == "celebrity" and st.session_state.q_index == 1) or \
                         (is_personal and st.session_state.q_index <= 3)
 
-            if is_auto and is_target:
+            is_first_question = (st.session_state.q_index == 1)
+            is_auto = (st.session_state.get("q_mode") == "自动回答")
+
+            if is_auto and (not is_first_question) and (st.session_state.q_index <= 3):
                 ai_options = ["选项A", "选项B", "选项C", "选项D"] 
                 choice = st.radio("AI 预测关联选项:", ai_options + ["都不是，自己填写"])
                 if choice == "都不是，自己填写":
