@@ -642,73 +642,74 @@ with st.sidebar:
 
 
 # =========== 智能自动调用 API 函数 ==========
-def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", is_json=False):
-    route = AUTO_MODEL_ROUTING.get(scenario)
-    if route["key_var"] == "grok":
-        current_key = GROK_KEY
-    elif route["key_var"] == "gemini":
-        current_key = GEMINI_KEY
-    elif route["key_var"] == "deepseek":
-        current_key = DEEPSEEK_KEY
-    elif route["key_var"] == "doubao":
-        current_key = DOUBAO_KEY
-    else:
-        current_key = None
+from openai import OpenAI
 
-    if not current_key or current_key.startswith("你的"):
-        st.error(f"❌ 场景 [{scenario}] 触发失败：尚未配置对应的 {route['key_var'].upper()} API Key！")
-        st.stop()
+def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", is_json=False):
+       priority_routes = [scenario, "chat_backup"] 
     
-    if route["key_var"] == "gemini":
-        import httpx
-        try:
-            proxy_client = httpx.Client(proxies={"http://": "http://127.0.0.1:7890", "https://": "http://127.0.0.1:7890"}, timeout=10)
-            client = OpenAI(api_key=current_key, base_url=route["base_url"], http_client=proxy_client)
-        except:
-            client = OpenAI(api_key=current_key, base_url=route["base_url"])
-    else:
-        client = OpenAI(api_key=current_key, base_url=route["base_url"])
+    last_error = None
+    
     formatted_messages = [{"role": "system", "content": system_prompt}] + [
         {"role": m["role"], "content": m["content"]} for m in messages_list
     ]
-    kwargs = {
-        "model": route["model_name"],
-        "messages": formatted_messages,
-        "temperature": 0.8
-    }
-    if is_json and route["key_var"] == "deepseek":
-        kwargs["response_format"] = {"type": "json_object"}
-    
-    if route["key_var"] == "gemini":
-        kwargs["extra_body"] = {"thinking":{"type": "disabled"}}
+
+    for route_name in priority_routes:
+        route = AUTO_MODEL_ROUTING.get(route_name)
+        if not route:
+            continue
+            
+        key_map = {
+            "grok": GROK_KEY,
+            "gemini": GEMINI_KEY,
+            "deepseek": DEEPSEEK_KEY,
+            "doubao": DOUBAO_KEY
+        }
+        current_key = key_map.get(route["key_var"])
         
-    response = client.chat.completions.create(**kwargs)
-    return response.choices[0].message.content
+        # 校验 Key 是否有效
+        if not current_key or current_key.startswith("你的"):
+            continue
+
+        try:
+            client = OpenAI(api_key=current_key, base_url=route["base_url"])
+            
+            kwargs = {
+                "model": route["model_name"],
+                "messages": formatted_messages,
+                "temperature": 0.8
+            }
+            
+            # 特殊参数处理
+            if is_json and route["key_var"] == "deepseek":
+                kwargs["response_format"] = {"type": "json_object"}
+            
+            # 执行请求
+            response = client.chat.completions.create(**kwargs)
+            return response.choices[0].message.content
+            
+        except Exception as e:
+            last_error = str(e)
+            print(f"⚠️ 接口 {route_name} 调用失败，尝试下一个... 错误原因: {last_error}")
+            continue 
+
+    raise Exception(f"所有 API 接口均不可用。最后一次错误: {last_error}")
+
 
 @st.cache_data(ttl=3600)
 def generate_ai_options(current_question, past_qa, persona_name):
-    prompt = f"""
-    你现在正在扮演「{persona_name}」的 AI 模拟器。
-    当前问题是：{current_question}
-    用户的过往回答记录是：
-    {past_qa}
-    
-    请根据上述背景，为用户生成 4 个该角色在此时最可能说出的、具有代入感的回复选项。
-    要求：
-    1. 选项内容要符合角色的性格、口癖和说话风格。
-    2. 选项文字简洁，每条不超过 30 个字。
-    3. 只返回 4 个选项，用英文分号 ";" 分隔，不要带序号，不要带其他废话。
-    """
+    prompt = f"你正在扮演「{persona_name}」，请根据背景生成 4 个回复选项。只返回 4 行纯文本，每行一个选项，不要序号，不要标点。背景：{past_qa}，问题：{current_question}"
     
     try:
         options_text = call_smart_ai_api(
-            system_prompt="你是一个人设对话选项生成器，只返回分号分隔的四个选项内容。",
+            system_prompt="你是一个选项生成器，只返回 4 行纯文本。",
             messages_list=[{"role": "user", "content": prompt}],
-            scenario="extract_persona" # 使用 deepseek 场景，逻辑相对严谨
+            scenario="extract_persona" # 这里对应你 AUTO_MODEL_ROUTING 中的配置
         )
-        return [opt.strip() for opt in options_text.split(";") if opt.strip()]
+        options = [line.strip() for line in options_text.strip().split('\n') if line.strip()]
+        return options[:4] if len(options) >= 4 else ["（选项生成异常，请手动输入）"] * 4
     except Exception as e:
-        return ["（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）", "（选项加载失败，请手动输入）"]
+        st.error(f"选项加载失败: {e}")
+        return ["（选项加载失败，请手动输入）"] * 4
 
 
 
