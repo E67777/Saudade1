@@ -645,7 +645,7 @@ with st.sidebar:
 from openai import OpenAI
 
 def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", is_json=False):
-       priority_routes = [scenario, "chat_backup"] 
+    priority_routes = [scenario, "chat_backup"] 
     
     last_error = None
     
@@ -666,7 +666,6 @@ def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", 
         }
         current_key = key_map.get(route["key_var"])
         
-        # 校验 Key 是否有效
         if not current_key or current_key.startswith("你的"):
             continue
 
@@ -679,11 +678,9 @@ def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", 
                 "temperature": 0.8
             }
             
-            # 特殊参数处理
             if is_json and route["key_var"] == "deepseek":
                 kwargs["response_format"] = {"type": "json_object"}
             
-            # 执行请求
             response = client.chat.completions.create(**kwargs)
             return response.choices[0].message.content
             
