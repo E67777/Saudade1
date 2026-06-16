@@ -484,6 +484,21 @@ st.markdown(f"""
 
 
 # =========== 初始化状态 ==========
+def render_back_button():
+    if st.session_state.page not in ["home", "chat", "secret_chat"]:
+        col1, _ = st.columns([1, 10])
+        with col1:
+            if st.button("⬅️ 返回"):
+                # 页面跳转映射
+                jump_map = {
+                    "library": "home",
+                    "custom_menu": "home",
+                    "manual_custom": "custom_menu",
+                    "questionnaire": "custom_menu",
+                    "confirm_persona": "custom_menu" 
+                }
+                st.session_state.page = jump_map.get(st.session_state.page, "home")
+                st.rerun()
 defaults = {
     "page": "home",           
     "messages": [],
@@ -499,8 +514,10 @@ defaults = {
     "pet_action": "等待中...", 
     "user_avatar": "😈",       
     "ta_avatar": "🙃",
-    "user_name": "小乖",         
+    "user_name": "小乖",
+    "q_mode": "手动回答",
 }
+
 for k, v in defaults.items():
     if k not in st.session_state:
         st.session_state[k] = v
@@ -686,6 +703,7 @@ if st.session_state.page == "home":
 
 # ============ 页面：资料库 ==========
 elif st.session_state.page == "library":
+    render_back_button() 
     st.markdown('<div class="saudade-title">资料库</div>', unsafe_allow_html=True)
     st.caption("选择一位明星，您可以自定义更改Ta的名字和设定")
 
@@ -713,10 +731,12 @@ elif st.session_state.page == "library":
 
 # ========== 页面：自定义菜单 ==========
 elif st.session_state.page == "custom_menu":
+    render_back_button() 
     st.markdown('<div class="saudade-title">自定义</div>', unsafe_allow_html=True)
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("#### 使用题库推演")
+        mode = st.radio("选择回答方式：", ["手动回答", "自动回答"], horizontal=True)
         if st.button("开始问答", use_container_width=True):
             st.session_state.page = "questionnaire"
             st.session_state.q_index = 0
@@ -732,8 +752,10 @@ elif st.session_state.page == "custom_menu":
         st.session_state.page = "home"
         st.rerun()
 
+
 # ========== 页面：手动高度自定义 ==========
 elif st.session_state.page == "manual_custom":
+    render_back_button()
     st.markdown('<div class="saudade-title">高度自定义</div>', unsafe_allow_html=True)
     name = st.text_input("他/她的名字或代称 *")
     gender = st.selectbox("性别 *", options=["男", "女", "其他"])
@@ -751,6 +773,7 @@ elif st.session_state.page == "manual_custom":
 
 # ========== 页面：问卷推演 ==========
 elif st.session_state.page == "questionnaire":
+    render_back_button()
     if st.session_state.q_index == 0:
         st.markdown('<div class="saudade-title">题库推演</div>', unsafe_allow_html=True)
         st.session_state.q_gender = st.selectbox("性别 *", options=["男", "女", "Secret"])
@@ -767,7 +790,13 @@ elif st.session_state.page == "questionnaire":
         if st.session_state.q_index <= total:
             current_q = questions[st.session_state.q_index - 1]
             st.markdown(f"### 问题 {st.session_state.q_index} / {total}\n{current_q}")
-            answer = st.text_area("你的回答", key=f"q_{st.session_state.q_index}")
+            if st.session_state.get("q_mode") == "自动回答" and (st.session_state.q_index <= 3):
+                options = ["预测选项A", "预测选项B", "预测选项C", "预测选项D"] 
+                answer = st.radio("AI 预测关联选项:", options + ["都不是，自己填写"])
+                if answer == "都不是，自己填写":
+                    answer = st.text_input("请填写您的答案：")
+            else:
+                answer = st.text_area("你的回答", key=f"q_{st.session_state.q_index}")
             
             col1, col2 = st.columns(2)
             with col1:
@@ -785,6 +814,7 @@ elif st.session_state.page == "questionnaire":
 
 # ========== 页面：生成人设中 ==========
 elif st.session_state.page == "generating_persona":
+    render_back_button()
     st.markdown('<div class="saudade-title">Saudade</div>', unsafe_allow_html=True)
     with st.spinner("正在根据你的回答，还原那个人的灵魂..."):
         qa_text = "\n".join([f"Q: {item['question']}\nA: {item['answer']}" for item in st.session_state.q_answers])
@@ -800,6 +830,7 @@ elif st.session_state.page == "generating_persona":
 
 # ========== 页面：确认并修改人设 ==========
 elif st.session_state.page == "confirm_persona":
+    render_back_button()
     p = st.session_state.persona
     st.markdown('<div class="saudade-title">确认并自定义角色</div>', unsafe_allow_html=True)
     
@@ -827,6 +858,7 @@ elif st.session_state.page == "confirm_persona":
 
 # ========== 页面：对话 ==========
 elif st.session_state.page == "chat":
+    render_back_button()
     p = st.session_state.persona
     name = p.get("name", "Ta")
 
@@ -927,6 +959,7 @@ elif st.session_state.page == "chat":
 
 # ========== 页面：结尾 ==========
 elif st.session_state.page == "ending":
+    render_back_button()
     st.markdown('<div class="saudade-title">Saudade</div>', unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
     st.markdown("""
@@ -955,6 +988,7 @@ elif st.session_state.page == "ending":
 
 # ========== 安慰与小动物互动 ==========
 elif st.session_state.page == "comfort_page":
+    render_back_button()
     p = st.session_state.persona
     name = p.get("name", "Ta")
 
@@ -994,6 +1028,7 @@ elif st.session_state.page == "comfort_page":
 
     # 阶段二：小动物互动
     elif st.session_state.comfort_step == "pet":
+        render_back_button()
         if p.get("type") == "celebrity":
             animal_prompt = f"明星「{name}」在粉丝圈子里的‘动物塑’（如猫、狗、兔、狐狸、熊等）是什么？请只返回该动物的一个汉字（例如：猫），不要任何标点符号或多余解释。"
             try:
