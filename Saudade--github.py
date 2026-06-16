@@ -685,7 +685,7 @@ def call_smart_ai_api(system_prompt, messages_list, scenario="chat_simulation", 
     response = client.chat.completions.create(**kwargs)
     return response.choices[0].message.content
 
-
+@st.cache_data(ttl=3600)
 def generate_ai_options(current_question, past_qa, persona_name):
     prompt = f"""
     你现在正在扮演「{persona_name}」的 AI 模拟器。
