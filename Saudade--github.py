@@ -736,8 +736,9 @@ elif st.session_state.page == "custom_menu":
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("#### 使用题库推演")
-        mode = st.radio("选择回答方式：", ["手动回答", "自动回答"], horizontal=True)
+        mode = st.radio("选择回答方式：", ["手动回答", "自动回答"], horizontal=True, key="mode_selector")
         if st.button("开始问答", use_container_width=True):
+            st.session_state.q_mode = mode
             st.session_state.page = "questionnaire"
             st.session_state.q_index = 0
             st.session_state.q_answers = []
